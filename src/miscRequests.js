@@ -1285,6 +1285,95 @@ module.exports = {
     }
   },
 
+  async alertToBacktest(alert, sessionId, sessionSign, server = 'prodata') {
+    return new Promise(async (resolve, reject) => {
+      const { pine_id, inputs } = alert.condition.series[0];
+      const symbol = alert.symbol.match(/"symbol":"([^"]+)"/)[1];
+
+      const client = new this.Client({
+        server,
+        token: sessionId,
+        signature: sessionSign,
+      });
+
+      client.onError(() => {
+        client.end();
+        return reject(Error('[TRADINGVIEW]: Client error'));
+      });
+
+      const chart = new client.Session.Chart();
+      chart.setMarket(symbol, { timeframe: `${alert.resolution}`, range: 99999 });
+
+      chart.onError(() => {
+        client.end();
+        return reject(Error('[TRADINGVIEW]: chart error'));
+      });
+
+      const indicator = await this.getIndicator(pine_id);
+
+      const extIndicators = {};
+
+      for (const key of Object.keys(inputs)) {
+        const input = indicator.inputs[key];
+        const value = inputs[key];
+
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const scriptId = value.pine_id;
+
+          const isTvGeneralIndicator = value.pine_id?.startsWith('STD;');
+          const isPublicUserIndicator = value.pine_id?.startsWith('PUB;');
+          const isBuiltinIndicator = !value.pine_id;
+
+          if (isBuiltinIndicator) {
+            return reject(Error('[TRADINGVIEW]: TODO:: FIX TV BUILTIN INDICATORS'));
+          }
+
+          if (!extIndicators[value.pine_id]) {
+            const externalIndicator = await this.getIndicator(scriptId);
+            if (isPublicUserIndicator) {
+              for (const k in value.inputs) {
+                const i = externalIndicator.inputs?.[k];
+                if (i && Object.prototype.hasOwnProperty.call(input, 'value')) {
+                  i.value = value.inputs[k];
+                }
+              }
+            }
+
+            const study = new chart.Study(externalIndicator);
+            if (isTvGeneralIndicator) {
+              for (const ke in value.inputs) {
+                const i = externalIndicator.inputs?.[ke];
+                if (i && Object.prototype.hasOwnProperty.call(input, 'value')) {
+                  i.value = value.inputs[ke];
+                }
+              }
+            }
+            extIndicators[value.pine_id] = study;
+          }
+
+          const curStudy = extIndicators[value.pine_id];
+          input.value = `${curStudy.studID}$${value.plot_id.split('_')[1]}`;
+          continue;
+        }
+
+        if (!input) continue;
+        input.value = value;
+      }
+
+      const study = new chart.Study(indicator);
+
+      study.onUpdate(() => {
+        client.end();
+        return resolve(study);
+      });
+
+      study.onError(() => {
+        client.end();
+        return reject(Error('[TRADINGVIEW]: Study error'));
+      });
+    });
+  },
+
   /**
      * modify multiple alerts
      */
