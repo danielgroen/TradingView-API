@@ -1,5 +1,5 @@
 const { BuiltInIndicator, getIndicator } = require('../miscRequests');
-const { Client } = require('../client');
+const Client = require('../client');
 
 const serverOptions = ['prodata', 'history-data'];
 const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOptions[0]) => new Promise(async (resolve, reject) => {
