@@ -1,11 +1,13 @@
 const { BuiltInIndicator, getIndicator } = require('../miscRequests');
+const { Client } = require('../client');
 
-const alertToBacktest = async (alert, sessionId, sessionSign, server = 'prodata') => new Promise(async (resolve, reject) => {
+const serverOptions = ['prodata', 'history-data'];
+const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOptions[0]) => new Promise(async (resolve, reject) => {
   // eslint-disable-next-line camelcase
   const { pine_id, inputs } = alert.condition.series[0];
   const symbol = alert.symbol.match(/"symbol":"([^"]+)"/)[1];
 
-  const client = new this.Client({
+  const client = new Client({
     server,
     token: sessionId,
     signature: sessionSign,
