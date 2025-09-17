@@ -35,7 +35,6 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = 'prodata'
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       const scriptId = value.pine_id;
 
-      // const isPersonalIdicator = value.pine_id?.startsWith('USER;');
       const isPublicUserIndicator = value.pine_id?.startsWith('PUB;');
       const isTvGeneralIndicator = value.pine_id?.startsWith('STD;');
       const isBuiltinIndicator = !value.pine_id;
@@ -43,7 +42,7 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = 'prodata'
       if (!extIndicators[value.pine_id]) {
         const externalIndicator = isBuiltinIndicator
           ? await new BuiltInIndicator(value.study)
-          : await getIndicator(scriptId, 'last', sessionId, sessionSign);
+          : await getIndicator(scriptId, value.pine_version ?? 'last', sessionId, sessionSign);
 
         if (isPublicUserIndicator) {
           for (const k in value.inputs) {
