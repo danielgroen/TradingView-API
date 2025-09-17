@@ -281,7 +281,6 @@ module.exports = {
       },
       validateStatus,
     });
-    console.log(data);
 
     if (!data.success || !data.result.metaInfo || !data.result.metaInfo.inputs) {
       throw new Error(`Inexistent or unsupported indicator: "${data.reason}"`);
