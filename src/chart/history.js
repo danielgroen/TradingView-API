@@ -208,8 +208,8 @@ module.exports = (client) => class HistorySession {
 
     /** Delete the chart session */
     delete() {
-      this.#client.send('chart_delete_session', [this.#historySessionID]);
       this.#client.send('history_delete_session', [this.#historySessionID]); // is this needed
+      // this.#client.send('chart_delete_session', [this.#historySessionID]);
       delete this.#client.sessions[this.#historySessionID];
     }
 };
