@@ -262,6 +262,29 @@ module.exports = {
     }))];
   },
 
+  async getScriptInfo(id, session = '', signature = '') {
+    if (!id.startsWith('PUB')) return true;
+    // if (!id.startsWith('USER')) return true; // not sure if we need this check
+
+    try {
+      const { data } = await axios.get(
+        `https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=${encodeURIComponent(id)}`,
+        {
+          headers: {
+            ...defaultHeaders,
+            cookie: genAuthCookies(session, signature),
+          },
+          validateStatus,
+        },
+      );
+
+      if (data && typeof data === 'object') return { ...data };
+      throw new Error(data);
+    } catch (e) {
+      throw new Error(`${e.message ?? e}`);
+    }
+  },
+
   /**
      * Get an indicator
      * @function getIndicator
@@ -272,9 +295,9 @@ module.exports = {
      * @returns {Promise<PineIndicator>} Indicator
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
-    const indicID = id.replace(/ |%/g, '%25');
+    // const indicID = id.replace(/ |%/g, '%25'); // old variant
 
-    const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${indicID}/${version}`, {
+    const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,
         cookie: genAuthCookies(session, signature),
@@ -331,7 +354,7 @@ module.exports = {
     });
 
     return new PineIndicator({
-      pineId: data.result.metaInfo.scriptIdPart || indicID,
+      pineId: data.result.metaInfo.scriptIdPart || encodeURIComponent(id),
       pineVersion: data.result.metaInfo.pine.version || version,
       description: data.result.metaInfo.description,
       shortDescription: data.result.metaInfo.shortDescription,
@@ -382,85 +405,6 @@ module.exports = {
     };
 
     return indicator;
-  },
-
-  /**
-     * Load a personal/custom indicator
-     * @function getPersonalIndicator
-     * @param {string} id Indicator ID (Like: USER;XXXXXXXXXXXXXXXXXXXXX)
-     * @param {string} session User 'sessionid' cookie
-     * @param {string} [signature] User 'sessionid_sign' cookie
-     * @returns {Promise<PineIndicator>} Indicator
-     */
-  async getPersonalIndicator(id, session, signature) {
-    const indicID = id.replace(/ |%/g, '%25').replace(';', '%3B');
-
-    const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${indicID}/last`, {
-      validateStatus,
-      headers: {
-        ...defaultHeaders,
-        cookie: genAuthCookies(session, signature),
-      },
-    });
-
-    if (data === 'The user requesting information on the script is not allowed to do so') throw new Error('User does not have access to this script.');
-
-    if (!data.success || !data.result.metaInfo || !data.result.metaInfo.inputs) throw new Error(`Non-existent or unsupported indicator: '${id}' '${data.reason}'`);
-
-    const inputs = {};
-
-    data.result.metaInfo.inputs.forEach((input) => {
-      if (['text', 'pineId', 'pineVersion'].includes(input.id)) return;
-
-      const inlineName = input.name
-        .replace(/ /g, '_')
-        .replace(/[^a-zA-Z0-9_]/g, '');
-
-      inputs[input.id] = {
-        name: input.name,
-        inline: input.inline || inlineName,
-        internalID: input.internalID || inlineName,
-        tooltip: input.tooltip,
-
-        type: input.type,
-        value: input.defval,
-        isHidden: !!input.isHidden,
-        isFake: !!input.isFake,
-      };
-
-      if (input.options) inputs[input.id].options = input.options;
-    });
-
-    const plots = {};
-
-    Object.keys(data.result.metaInfo.styles).forEach((plotId) => {
-      const plotTitle = data.result.metaInfo.styles[plotId].title
-        .replace(/ /g, '_')
-        .replace(/[^a-zA-Z0-9_]/g, '');
-
-      const titles = Object.values(plots);
-
-      if (titles.includes(plotTitle)) {
-        let i = 2;
-        while (titles.includes(`${plotTitle}_${i}`)) i += 1;
-        plots[plotId] = `${plotTitle}_${i}`;
-      } else plots[plotId] = plotTitle;
-    });
-
-    data.result.metaInfo.plots.forEach((plot) => {
-      if (!plot.target) return;
-      plots[plot.id] = `${plots[plot.target] ?? plot.target}_${plot.type}`;
-    });
-
-    return new PineIndicator({
-      pineId: data.result.metaInfo.scriptIdPart || indicID,
-      pineVersion: data.result.metaInfo.pine.version,
-      description: data.result.metaInfo.description,
-      shortDescription: data.result.metaInfo.shortDescription,
-      inputs,
-      plots,
-      script: data.result.ilTemplate,
-    });
   },
 
   /**

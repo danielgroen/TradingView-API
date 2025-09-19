@@ -9,9 +9,8 @@ if (!process.env.SESSION || !process.env.SIGNATURE) throw Error('Please set your
 // const alertQuery = '#43';
 
 // NOT WORKING
-// const alertQuery = '#99';
 // const alertQuery = '#100';
-const alertQuery = 'changeme';
+const alertQuery = '🤖    #6';
 
 (async () => {
   const alerts = await TradingView.getAlerts(process.env.SESSION, process.env.SIGNATURE);
@@ -27,6 +26,7 @@ const alertQuery = 'changeme';
   }));
 
   const alert = await filteredAlerts.filter((a) => a.name.includes(alertQuery))[0];
+
   if (!alert) throw Error('Alert not found');
 
   const result = await TradingView.alertToBacktest(alert, process.env.SESSION, process.env.SIGNATURE);

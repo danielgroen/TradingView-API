@@ -1,11 +1,13 @@
 const { BuiltInIndicator, getIndicator } = require('../miscRequests');
+const Client = require('../client');
 
-const alertToBacktest = async (alert, sessionId, sessionSign, server = 'prodata') => new Promise(async (resolve, reject) => {
+const serverOptions = ['prodata', 'history-data'];
+const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOptions[0]) => new Promise(async (resolve, reject) => {
   // eslint-disable-next-line camelcase
   const { pine_id, inputs } = alert.condition.series[0];
   const symbol = alert.symbol.match(/"symbol":"([^"]+)"/)[1];
 
-  const client = new this.Client({
+  const client = new Client({
     server,
     token: sessionId,
     signature: sessionSign,
@@ -35,7 +37,6 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = 'prodata'
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       const scriptId = value.pine_id;
 
-      // const isPersonalIdicator = value.pine_id?.startsWith('USER;');
       const isPublicUserIndicator = value.pine_id?.startsWith('PUB;');
       const isTvGeneralIndicator = value.pine_id?.startsWith('STD;');
       const isBuiltinIndicator = !value.pine_id;
@@ -43,7 +44,7 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = 'prodata'
       if (!extIndicators[value.pine_id]) {
         const externalIndicator = isBuiltinIndicator
           ? await new BuiltInIndicator(value.study)
-          : await getIndicator(scriptId, 'last', sessionId, sessionSign);
+          : await getIndicator(scriptId, value.pine_version ?? 'last', sessionId, sessionSign);
 
         if (isPublicUserIndicator) {
           for (const k in value.inputs) {

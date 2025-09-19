@@ -35,8 +35,8 @@ module.exports = (client) => class HistorySession {
      * @param {...{}} data Packet data
      */
     #handleEvent(ev, ...data) {
-      this.#callbacks[ev].forEach((e) => e(...data));
-      this.#callbacks.event.forEach((e) => e(ev, ...data));
+      this.#callbacks[ev]?.forEach((e) => e(...data));
+      this.#callbacks.event?.forEach((e) => e(ev, ...data));
     }
 
     #handleError(...msgs) {
