@@ -1,12 +1,11 @@
 const { genSessionID } = require('../utils');
 const { parseCompressed } = require('../protocol');
 const { getInputs, parseTrades } = require('./study');
-const ChartSession = require('./session');
 
 /**
  * @param {import('../client').ClientBridge} client
  */
-module.exports = (client) => class HistorySession extends ChartSession {
+module.exports = (client) => class HistorySession {
     #historySessionID = genSessionID('hs');
 
     /** Parent client */
@@ -46,7 +45,6 @@ module.exports = (client) => class HistorySession extends ChartSession {
     }
 
     constructor() {
-      super();
       this.#client.sessions[this.#historySessionID] = {
         type: 'history',
         onData: async (packet) => {
@@ -177,6 +175,7 @@ module.exports = (client) => class HistorySession extends ChartSession {
     /** @type {HistorySessionBridge} */
     #historySession = {
       sessionID: this.#historySessionID,
+      getStudId: this.getStudId,
       send: (t, p) => this.#client.send(t, p),
     };
 
