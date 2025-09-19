@@ -262,14 +262,21 @@ module.exports = {
     }))];
   },
 
-  async canGetScript(id, session = '', signature = '') {
+  async getScriptInfo(id, session = '', signature = '') {
     if (!id.startsWith('PUB')) return true;
     // if (!id.startsWith('USER')) return true; // not sure if we need this check
 
     try {
       const { data } = await axios.get(
-        `https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=${encodeURIComponent(id)}`,
-        { headers: { ...defaultHeaders, cookie: genAuthCookies(session, signature) }, validateStatus },
+        // `https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=${encodeURIComponent(id)}`,
+        'https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=PUB%3B0b00820bc4a441ddba133703e9cdc5ed',
+        {
+          headers: {
+            ...defaultHeaders,
+            cookie: genAuthCookies(session, signature),
+          },
+          validateStatus,
+        },
       );
 
       if (data && typeof data === 'object') return { ...data };
@@ -289,7 +296,7 @@ module.exports = {
      * @returns {Promise<PineIndicator>} Indicator
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
-    await module.exports.canGetScript(id, session, signature);
+    // const indicID = id.replace(/ |%/g, '%25'); // old variant
 
     const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
@@ -348,7 +355,7 @@ module.exports = {
     });
 
     return new PineIndicator({
-      pineId: data.result.metaInfo.scriptIdPart || indicID,
+      pineId: data.result.metaInfo.scriptIdPart || encodeURIComponent(id),
       pineVersion: data.result.metaInfo.pine.version || version,
       description: data.result.metaInfo.description,
       shortDescription: data.result.metaInfo.shortDescription,

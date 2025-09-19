@@ -14,6 +14,17 @@ const client = new TradingView.Client({
   signature: process.env.SIGNATURE,
 });
 
+(async () => {
+  // const test = await TradingView.getIndicator('PUB;0b00820bc4a441ddba133703e9cdc5ed');
+  // const test = await TradingView.getIndicator('PUB;1140af4777d7460a89e29ea643a18df8');
+
+  const test = await TradingView.canGetIndicator('PUB;0b00820bc4a441ddba133703e9cdc5ed', process.env.SESSION, process.env.SIGNATURE);
+  // const test = await TradingView.getIndicator('PUB;0b00820bc4a441ddba133703e9cdc5ed', 'last', process.env.SESSION, process.env.SIGNATURE);
+  // console.log(test);
+})();
+
+return;
+
 const tests = [
   (next) => { /* Testing "Credentials error" */
     console.info('\nTesting "Credentials error" error:');
