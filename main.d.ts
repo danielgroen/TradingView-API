@@ -342,6 +342,12 @@ declare module '@mathieuc/tradingview' {
      */
     export function searchIndicator(search?: string): Promise<SearchIndicatorResult[]>;
 
+    export function getScriptInfo(
+        id: string,
+        session?: string,
+        signature?: string,
+    ): Promise<any>; // todo:: fix outcome
+
     /**
      * Get an indicator
      * @param {string} id Indicator ID

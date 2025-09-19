@@ -175,7 +175,6 @@ module.exports = (client) => class HistorySession {
     /** @type {HistorySessionBridge} */
     #historySession = {
       sessionID: this.#historySessionID,
-      getStudId: this.getStudId,
       send: (t, p) => this.#client.send(t, p),
     };
 

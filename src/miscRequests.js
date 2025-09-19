@@ -268,8 +268,7 @@ module.exports = {
 
     try {
       const { data } = await axios.get(
-        // `https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=${encodeURIComponent(id)}`,
-        'https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=PUB%3B0b00820bc4a441ddba133703e9cdc5ed',
+        `https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=${encodeURIComponent(id)}`,
         {
           headers: {
             ...defaultHeaders,
