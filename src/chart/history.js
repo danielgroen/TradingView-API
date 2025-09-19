@@ -84,7 +84,7 @@ module.exports = (client) => class HistorySession {
 
           if (['request_error', 'critical_error'].includes(packet.type)) {
             const [, name, description] = packet.data;
-            this.#handleError('Critical error:', name, description);
+            this.#handleError({ details: 'Critical error:', name, description });
           }
         },
       };
