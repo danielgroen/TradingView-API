@@ -262,6 +262,23 @@ module.exports = {
     }))];
   },
 
+  async canGetScript(id, session = '', signature = '') {
+    if (!id.startsWith('PUB')) return true;
+    // if (!id.startsWith('USER')) return true; // not sure if we need this check
+
+    try {
+      const { data } = await axios.get(
+        `https://pine-facade.tradingview.com/pine-facade/get_script_info/?pine_id=${encodeURIComponent(id)}`,
+        { headers: { ...defaultHeaders, cookie: genAuthCookies(session, signature) }, validateStatus },
+      );
+
+      if (data && typeof data === 'object') return { ...data };
+      throw new Error(data);
+    } catch (e) {
+      throw new Error(`${e.message ?? e}`);
+    }
+  },
+
   /**
      * Get an indicator
      * @function getIndicator
@@ -272,9 +289,9 @@ module.exports = {
      * @returns {Promise<PineIndicator>} Indicator
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
-    const indicID = id.replace(/ |%/g, '%25');
+    await module.exports.canGetScript(id, session, signature);
 
-    const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${indicID}/${version}`, {
+    const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,
         cookie: genAuthCookies(session, signature),
