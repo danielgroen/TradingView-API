@@ -1,6 +1,7 @@
 const { genSessionID } = require('../utils');
 const { parseCompressed } = require('../protocol');
 const { getInputs, parseTrades } = require('./study');
+const { studyConstructor } = require('./study');
 
 /**
  * @param {import('../client').ClientBridge} client
@@ -10,6 +11,18 @@ module.exports = (client) => class HistorySession {
 
     /** Parent client */
     #client = client;
+
+    studIndex = 1;
+
+    getStudId = () => {
+      const result = this.studIndex;
+      this.studIndex += this.studIndex;
+
+      return result;
+    }
+
+    /** @type {StudyListeners} */
+    #studyListeners = {};
 
     #callbacks = {
       historyLoaded: [],
@@ -57,6 +70,16 @@ module.exports = (client) => class HistorySession {
               const changes = await this.updateReport(parsed);
               this.#handleEvent('historyLoaded', changes);
             }
+          }
+
+          if (packet.type === 'symbol_error') {
+            this.#handleError(`(${packet.data[1]}) Symbol error:`, packet.data[2]);
+            return;
+          }
+
+          if (packet.type === 'series_error') {
+            this.#handleError('Series error:', packet.data[3]);
+            return;
           }
 
           if (['request_error', 'critical_error'].includes(packet.type)) {
@@ -175,13 +198,18 @@ module.exports = (client) => class HistorySession {
     /** @type {HistorySessionBridge} */
     #historySession = {
       sessionID: this.#historySessionID,
+      getStudId: this.getStudId,
+      studyListeners: this.#studyListeners,
+      indexes: {},
       send: (t, p) => this.#client.send(t, p),
     };
+
+    Study = studyConstructor(this.#historySession);
 
     /** Delete the chart session */
     delete() {
       this.#client.send('chart_delete_session', [this.#historySessionID]);
-      this.#client.send('history_delete_session', [this.#historySessionID]);
+      this.#client.send('history_delete_session', [this.#historySessionID]); // is this needed
       delete this.#client.sessions[this.#historySessionID];
     }
 };
