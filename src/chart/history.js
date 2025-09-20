@@ -84,7 +84,12 @@ module.exports = (client) => class HistorySession {
 
           if (['request_error', 'critical_error'].includes(packet.type)) {
             const [, name, description] = packet.data;
-            this.#handleError({ details: 'Critical error:', name, description });
+            this.#handleError({
+              type: `[history]: ${packet.type}`,
+              name,
+              description: description?.split(',')[0] ?? description,
+              timestamp: new Date(),
+            });
           }
         },
       };

@@ -80,7 +80,7 @@ module.exports = class Client {
     const error = {
       name: name instanceof Error ? name.name : String(name),
       description: description instanceof Error ? description.message : String(description),
-      details: rest,
+      details: rest, // keep any extra stuff if it exists
       timestamp: new Date(),
     };
 

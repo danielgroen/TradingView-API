@@ -171,6 +171,7 @@ module.exports = (client) => class ChartSessionHistoryCombined {
 
   #callbacks = {
     seriesLoaded: [],
+    historyLoaded: [],
     symbolLoaded: [],
     update: [],
 
