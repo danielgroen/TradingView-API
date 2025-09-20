@@ -340,7 +340,6 @@ module.exports = (client) => class ChartSessionHistoryCombined {
     };
 
     // TODO:: I dont think this should be done in the constructor... not sure
-    this.#client.send('history_create_session', [this.#historySessionID]);
   }
 
   #seriesCreated = false;
@@ -580,6 +579,8 @@ module.exports = (client) => class ChartSessionHistoryCombined {
      * @param {'EUR' | 'USD' | string} [options.currency] Chart currency
      */
   requestHistoryData(symbol, indicator, options) {
+    this.#client.send('history_create_session', [this.#historySessionID]);
+
     const symbolInit = {
       symbol: symbol || 'BTCEUR',
       adjustment: options.adjustment || 'splits',
