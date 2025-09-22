@@ -12,18 +12,6 @@ module.exports = (client) => class HistorySession {
     /** Parent client */
     #client = client;
 
-    studIndex = 1;
-
-    getStudId = () => {
-      const result = this.studIndex;
-      this.studIndex += this.studIndex;
-
-      return result;
-    }
-
-    /** @type {StudyListeners} */
-    #studyListeners = {};
-
     #callbacks = {
       historyLoaded: [],
 
@@ -158,7 +146,7 @@ module.exports = (client) => class HistorySession {
      * @param {'regular' | 'extended'} [options.session] Chart session
      * @param {'EUR' | 'USD' | string} [options.currency] Chart currency
      */
-    requestHistoryData(symbol, indicator, options) {
+    requestHistoryData(symbol, indicator, options, indicatorDeps = []) {
       const symbolInit = {
         symbol: symbol || 'BTCEUR',
         adjustment: options.adjustment || 'splits',
@@ -178,7 +166,7 @@ module.exports = (client) => class HistorySession {
         { from_to: { from, to } },
         indicator.type,
         getInputs(indicator),
-        [], // what is this?
+        indicatorDeps,
       ]);
     }
 
@@ -203,8 +191,6 @@ module.exports = (client) => class HistorySession {
     /** @type {HistorySessionBridge} */
     #historySession = {
       sessionID: this.#historySessionID,
-      getStudId: this.getStudId,
-      studyListeners: this.#studyListeners,
       indexes: {},
       send: (t, p) => this.#client.send(t, p),
     };
@@ -213,8 +199,7 @@ module.exports = (client) => class HistorySession {
 
     /** Delete the chart session */
     delete() {
-      this.#client.send('history_delete_session', [this.#historySessionID]); // is this needed
-      // this.#client.send('chart_delete_session', [this.#historySessionID]);
+      this.#client.send('history_delete_session', [this.#historySessionID]);
       delete this.#client.sessions[this.#historySessionID];
     }
 };

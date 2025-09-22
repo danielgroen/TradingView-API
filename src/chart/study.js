@@ -204,6 +204,14 @@ const studyConstructor = (chartSession) => class ChartStudy {
     return this.#strategyReport;
   }
 
+  get getAsIndicatorDep() {
+    return {
+      study: this.instance.type,
+      id: this.#studID,
+      inputs: getInputs(this.instance),
+    };
+  }
+
   #callbacks = {
     studyCompleted: [],
     update: [],

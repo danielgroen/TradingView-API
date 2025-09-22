@@ -501,6 +501,9 @@ declare module '@mathieuc/tradingview' {
         UA?: string,
     ): Promise<LoginResponse>;
 
+    export function isPro(session: string, signature: string): Promise<{details: string; code: string} | {pro_plan: string}>;
+
+
     /**
      * Get user
      * @param {string} session User session
@@ -1644,7 +1647,7 @@ declare module '@mathieuc/tradingview' {
 
     export class ChartStudy {
         /** Study instance ID */
-        readonly id: string;
+        readonly studID: string;
         /** Indicator instance */
         instance: PineIndicator | BuiltInIndicator;
         /** Period values */
@@ -1655,6 +1658,9 @@ declare module '@mathieuc/tradingview' {
         readonly strategyReport: StrategyReport;
         /** Study callbacks */
         readonly callbacks: StudyCallbacks;
+
+        readonly getAsIndicatorDep: ChartStudy['getAsIndicatorDep'][];
+
 
         /**
          * Creates a new Study instance
@@ -2016,6 +2022,7 @@ declare module '@mathieuc/tradingview' {
                 currency?: 'EUR' | 'USD' | string;
                 resolution?: string;
             },
+            indicatorDeps?: typeof ChartStudy[],
         ): void;
 
         onHistoryLoaded(cb: () => void): void;
