@@ -285,6 +285,29 @@ module.exports = {
     }
   },
 
+  // https://symbol-search.tradingview.com/symbol_search/v3/?text=NAS100&hl=1&exchange=PEPPERSTONE&lang=en&search_type=undefined&domain=production&sort_by_country=US&promo=true
+  async symbolSearch(symbol, broker, session = '', signature = '') {
+    const url = 'https://symbol-search.tradingview.com/symbol_search/v3/';
+    const { data } = await axios.get(url, {
+      params: {
+        text: symbol.toUpperCase(),
+        hl: 1,
+        exchange: broker.toUpperCase(),
+        lang: 'en',
+        search_type: 'undefined',
+        domain: 'production',
+        sort_by_country: 'US',
+        promo: true,
+      },
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      validateStatus,
+    });
+    return data;
+  },
+
   /**
      * Get an indicator
      * @function getIndicator
@@ -296,7 +319,6 @@ module.exports = {
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
     // const indicID = id.replace(/ |%/g, '%25'); // old variant
-
     const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,

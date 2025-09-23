@@ -497,6 +497,8 @@ declare module '@mathieuc/tradingview' {
     export type proPlan = 'pro_premium' | 'pro_plus' | 'pro_essential' | 'pro_ultimate'
     export function isPro(session: string, signature: string): Promise<{details: string; code: string} | {pro_plan: proPlan}>;
 
+    export function symbolSearch(symbol: string, broker: string, session: string, signature: string): Promise<{data: any}>;
+
     /**
      * Get user
      * @param {string} session User session
