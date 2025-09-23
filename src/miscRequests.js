@@ -285,7 +285,6 @@ module.exports = {
     }
   },
 
-  // https://symbol-search.tradingview.com/symbol_search/v3/?text=NAS100&hl=1&exchange=PEPPERSTONE&lang=en&search_type=undefined&domain=production&sort_by_country=US&promo=true
   async symbolSearch(symbol, broker, session = '', signature = '') {
     const url = 'https://symbol-search.tradingview.com/symbol_search/v3/';
     const { data } = await axios.get(url, {
