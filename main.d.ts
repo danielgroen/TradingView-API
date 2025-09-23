@@ -369,13 +369,6 @@ declare module '@mathieuc/tradingview' {
         session?: string,
         signature?: string,
     ): Promise<RawPineIndicator>;
-
-    export function getPersonalIndicator(
-        id: string,
-        session: string,
-        signature?: string,
-    ): Promise<PineIndicator>;
-
     export interface TwoFactorInfoMessage {
         detail: string;
         code: string;

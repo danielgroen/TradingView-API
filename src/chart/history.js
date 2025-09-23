@@ -195,8 +195,6 @@ module.exports = (client) => class HistorySession {
       send: (t, p) => this.#client.send(t, p),
     };
 
-    Study = studyConstructor(this.#historySession);
-
     /** Delete the chart session */
     delete() {
       this.#client.send('history_delete_session', [this.#historySessionID]);
