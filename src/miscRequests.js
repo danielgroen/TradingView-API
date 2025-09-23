@@ -285,6 +285,28 @@ module.exports = {
     }
   },
 
+  async symbolSearch(symbol, broker, session = '', signature = '') {
+    const url = 'https://symbol-search.tradingview.com/symbol_search/v3/';
+    const { data } = await axios.get(url, {
+      params: {
+        text: symbol.toUpperCase(),
+        hl: 1,
+        exchange: broker.toUpperCase(),
+        lang: 'en',
+        search_type: 'undefined',
+        domain: 'production',
+        sort_by_country: 'US',
+        promo: true,
+      },
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      validateStatus,
+    });
+    return data;
+  },
+
   /**
      * Get an indicator
      * @function getIndicator
@@ -296,7 +318,6 @@ module.exports = {
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
     // const indicID = id.replace(/ |%/g, '%25'); // old variant
-
     const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,
@@ -592,6 +613,19 @@ module.exports = {
     };
   },
 
+  async isPro(session, signature = '') {
+    const { data } = await axios.get('https://www.tradingview.com/pro-plans/profile/', {
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      maxRedirects: 0,
+      validateStatus,
+    });
+
+    return data;
+  },
+
   /**
      * Get user from 'sessionid' cookie
      * @function getUser
@@ -600,6 +634,7 @@ module.exports = {
      * @param {string} [location] Auth page location (For france: https://fr.tradingview.com/)
      * @returns {Promise<User>} Token
      */
+
   async getUser(session, signature = '', location = 'https://www.tradingview.com/') {
     const { data, headers } = await axios.get(location, {
       headers: {
