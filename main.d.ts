@@ -499,6 +499,10 @@ declare module '@mathieuc/tradingview' {
 
     export function symbolSearch(symbol: string, broker: string, session: string, signature: string): Promise<{data: any}>;
 
+    export function GetDataByChartUrl(session: string, signature?: string, url: string): Promise<any>;
+
+    export function chartToBacktestResult(session: string, signature?: string, url: string, options?: any): Promise<any>;
+
     /**
      * Get user
      * @param {string} session User session

@@ -22,14 +22,14 @@ const defaultHeaders = {
   Connection: 'keep-alive',
 
   // extra headers
-  'Accept-Encoding': 'gzip, deflate, br, zstd',
-  'Sec-GPC': '1',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-site',
-  Priority: 'u=4',
-  Pragma: 'no-cache',
-  'Cache-Control': 'no-cache',
+  // 'Accept-Encoding': 'gzip, deflate, br, zstd',
+  // 'Sec-GPC': '1',
+  // 'Sec-Fetch-Dest': 'empty',
+  // 'Sec-Fetch-Mode': 'cors',
+  // 'Sec-Fetch-Site': 'same-site',
+  // Priority: 'u=4',
+  // Pragma: 'no-cache',
+  // 'Cache-Control': 'no-cache',
 };
 
 async function fetchScanData(tickers = [], columns = []) {
@@ -624,6 +624,25 @@ module.exports = {
     });
 
     return data;
+  },
+  async GetDataByChartUrl(session, signature = '', url) {
+    if (!url.includes('https://www.tradingview.com/chart/')) {
+      throw new Error(`Invalid chart URL, got: ${url}`);
+    }
+    const { data: html } = await axios.get(url, {
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      maxRedirects: 0,
+      validateStatus,
+    });
+
+    if (!html.includes('auth_token')) {
+      throw new Error('Wrong or expired sessionid/signature');
+    }
+
+    return JSON.parse(/initData\.content\s*=\s*(\{.*?\});/s.exec(html)?.[1] || '{}');
   },
 
   /**

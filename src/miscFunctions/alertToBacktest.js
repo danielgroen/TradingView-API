@@ -4,7 +4,7 @@ const Client = require('../client');
 const serverOptions = ['prodata', 'history-data'];
 const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOptions[0]) => new Promise(async (resolve, reject) => {
   // eslint-disable-next-line camelcase
-  const { pine_id, inputs } = alert.condition.series[0];
+  const { pine_id, pine_version, inputs } = alert.condition.series[0];
   const symbol = alert.symbol.match(/"symbol":"([^"]+)"/)[1];
 
   const client = new Client({
@@ -26,7 +26,7 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOpt
     return reject(Error('[TRADINGVIEW]: chart error'));
   });
 
-  const indicator = await getIndicator(pine_id, 'last', sessionId, sessionSign);
+  const indicator = await getIndicator(pine_id, pine_version ?? 'last', sessionId, sessionSign);
 
   const extIndicators = {};
 
