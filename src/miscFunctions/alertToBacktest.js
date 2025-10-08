@@ -1,4 +1,5 @@
-const { BuiltInIndicator, getIndicator } = require('../miscRequests');
+const { getIndicator } = require('../miscRequests');
+const BuiltInIndicator = require('../classes/BuiltInIndicator');
 const Client = require('../client');
 
 const serverOptions = ['prodata', 'history-data'];
@@ -54,12 +55,11 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOpt
           }
         }
 
-        const study = new chart.Study(externalIndicator);
         if (isTvGeneralIndicator) {
-          for (const ke in value.inputs) {
-            const i = externalIndicator.inputs?.[ke];
+          for (const k in value.inputs) {
+            const i = externalIndicator.inputs?.[k];
             if (i == null) continue;
-            i.value = value.inputs[ke];
+            i.value = value.inputs[k];
           }
         }
 
@@ -71,6 +71,7 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOpt
           }
         }
 
+        const study = new chart.Study(externalIndicator);
         extIndicators[value.pine_id] = study;
       }
 
