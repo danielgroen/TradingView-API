@@ -2260,7 +2260,7 @@ declare module '@mathieuc/tradingview' {
       trades: any[],
       equity: number[],
       profit: number
-    ): {pnl90: number, pnl30: number, pnl7: number};
+    ): {pnl7: number, pnl30: number, pnl90: number, pnl180: number, pnl270: number, pnl365: number};
 
     export function calculateCGR(startValue: number, endValue: number, periods: number): number
     

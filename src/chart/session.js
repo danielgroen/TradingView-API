@@ -259,7 +259,7 @@ module.exports = (client) => class ChartSession {
           this.#handleError({
             type: `[Session]: ${packet.type}`,
             name,
-            description: description?.split(',')[0] ?? description,
+            description: String(description).split(',')[0],
             timestamp: new Date(),
           });
         }

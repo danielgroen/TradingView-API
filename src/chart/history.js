@@ -75,7 +75,7 @@ module.exports = (client) => class HistorySession {
             this.#handleError({
               type: `[history]: ${packet.type}`,
               name,
-              description: description?.split(',')[0] ?? description,
+              description: String(description).split(',')[0],
               timestamp: new Date(),
             });
           }
