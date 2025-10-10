@@ -1,6 +1,7 @@
 const { genSessionID } = require('../utils');
 const { parseCompressed } = require('../protocol');
 const { getInputs, parseTrades } = require('./study');
+const { studyConstructor } = require('./study');
 
 /**
  * @param {import('../client').ClientBridge} client
@@ -59,9 +60,24 @@ module.exports = (client) => class HistorySession {
             }
           }
 
+          if (packet.type === 'symbol_error') {
+            this.#handleError(`(${packet.data[1]}) Symbol error:`, packet.data[2]);
+            return;
+          }
+
+          if (packet.type === 'series_error') {
+            this.#handleError('Series error:', packet.data[3]);
+            return;
+          }
+
           if (['request_error', 'critical_error'].includes(packet.type)) {
             const [, name, description] = packet.data;
-            this.#handleError('Critical error:', name, description);
+            this.#handleError({
+              type: `[history]: ${packet.type}`,
+              name,
+              description: String(description).split(',')[0],
+              timestamp: new Date(),
+            });
           }
         },
       };
@@ -130,7 +146,7 @@ module.exports = (client) => class HistorySession {
      * @param {'regular' | 'extended'} [options.session] Chart session
      * @param {'EUR' | 'USD' | string} [options.currency] Chart currency
      */
-    requestHistoryData(symbol, indicator, options) {
+    requestHistoryData(symbol, indicator, options, indicatorDeps = []) {
       const symbolInit = {
         symbol: symbol || 'BTCEUR',
         adjustment: options.adjustment || 'splits',
@@ -150,7 +166,7 @@ module.exports = (client) => class HistorySession {
         { from_to: { from, to } },
         indicator.type,
         getInputs(indicator),
-        [], // what is this?
+        indicatorDeps,
       ]);
     }
 
@@ -175,6 +191,7 @@ module.exports = (client) => class HistorySession {
     /** @type {HistorySessionBridge} */
     #historySession = {
       sessionID: this.#historySessionID,
+      indexes: {},
       send: (t, p) => this.#client.send(t, p),
     };
 

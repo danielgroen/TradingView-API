@@ -22,14 +22,14 @@ const defaultHeaders = {
   Connection: 'keep-alive',
 
   // extra headers
-  'Accept-Encoding': 'gzip, deflate, br, zstd',
-  'Sec-GPC': '1',
-  'Sec-Fetch-Dest': 'empty',
-  'Sec-Fetch-Mode': 'cors',
-  'Sec-Fetch-Site': 'same-site',
-  Priority: 'u=4',
-  Pragma: 'no-cache',
-  'Cache-Control': 'no-cache',
+  // 'Accept-Encoding': 'gzip, deflate, br, zstd',
+  // 'Sec-GPC': '1',
+  // 'Sec-Fetch-Dest': 'empty',
+  // 'Sec-Fetch-Mode': 'cors',
+  // 'Sec-Fetch-Site': 'same-site',
+  // Priority: 'u=4',
+  // Pragma: 'no-cache',
+  // 'Cache-Control': 'no-cache',
 };
 
 async function fetchScanData(tickers = [], columns = []) {
@@ -285,6 +285,28 @@ module.exports = {
     }
   },
 
+  async symbolSearch(symbol, broker, session = '', signature = '') {
+    const url = 'https://symbol-search.tradingview.com/symbol_search/v3/';
+    const { data } = await axios.get(url, {
+      params: {
+        text: symbol.toUpperCase(),
+        hl: 1,
+        exchange: broker.toUpperCase(),
+        lang: 'en',
+        search_type: 'undefined',
+        domain: 'production',
+        sort_by_country: 'US',
+        promo: true,
+      },
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      validateStatus,
+    });
+    return data;
+  },
+
   /**
      * Get an indicator
      * @function getIndicator
@@ -296,7 +318,6 @@ module.exports = {
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
     // const indicID = id.replace(/ |%/g, '%25'); // old variant
-
     const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,
@@ -592,6 +613,38 @@ module.exports = {
     };
   },
 
+  async isPro(session, signature = '') {
+    const { data } = await axios.get('https://www.tradingview.com/pro-plans/profile/', {
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      maxRedirects: 0,
+      validateStatus,
+    });
+
+    return data;
+  },
+  async GetDataByChartUrl(session, signature = '', url) {
+    if (!url.includes('https://www.tradingview.com/chart/')) {
+      throw new Error(`Invalid chart URL, got: ${url}`);
+    }
+    const { data: html } = await axios.get(url, {
+      headers: {
+        ...defaultHeaders,
+        cookie: genAuthCookies(session, signature),
+      },
+      maxRedirects: 0,
+      validateStatus,
+    });
+
+    if (!html.includes('auth_token')) {
+      throw new Error('Wrong or expired sessionid/signature');
+    }
+
+    return JSON.parse(/initData\.content\s*=\s*(\{.*?\});/s.exec(html)?.[1] || '{}');
+  },
+
   /**
      * Get user from 'sessionid' cookie
      * @function getUser
@@ -600,6 +653,7 @@ module.exports = {
      * @param {string} [location] Auth page location (For france: https://fr.tradingview.com/)
      * @returns {Promise<User>} Token
      */
+
   async getUser(session, signature = '', location = 'https://www.tradingview.com/') {
     const { data, headers } = await axios.get(location, {
       headers: {
