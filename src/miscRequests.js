@@ -317,7 +317,7 @@ module.exports = {
      * @returns {Promise<PineIndicator>} Indicator
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
-    // const indicID = id.replace(/ |%/g, '%25'); // old variant
+    // const [isPublic, isPersonal, isStudy] = [id.startsWith('PUB;'), id.startsWith('USER;'), id.startsWith('STD;')];
     const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,
@@ -326,8 +326,9 @@ module.exports = {
       validateStatus,
     });
 
+    if (data === 'The user requesting information on the script is not allowed to do so') throw new Error('User does not have access to this script.');
     if (!data.success || !data.result.metaInfo || !data.result.metaInfo.inputs) {
-      throw new Error(`Inexistent or unsupported indicator: "${data.reason}"`);
+      throw new Error(`Non-existent or unsupported indicator: '${id}' '${data.reason}'`);
     }
 
     const inputs = {};
@@ -355,8 +356,7 @@ module.exports = {
     const plots = {};
 
     Object.keys(data.result.metaInfo.styles).forEach((plotId) => {
-      const plotTitle = data.result.metaInfo.styles[plotId]
-        .title
+      const plotTitle = data.result.metaInfo.styles[plotId].title
         .replace(/ /g, '_')
         .replace(/[^a-zA-Z0-9_]/g, '');
 
@@ -642,7 +642,10 @@ module.exports = {
       throw new Error('Wrong or expired sessionid/signature');
     }
 
-    return JSON.parse(/initData\.content\s*=\s*(\{.*?\});/s.exec(html)?.[1] || '{}');
+    return {
+      content: JSON.parse(/initData\.content\s*=\s*(\{.*?\});/s.exec(html)?.[1] || '{}'),
+      metaInfo: eval(`(${html.match(/initData\.metaInfo\s*=\s*({[\s\S]*?});/)?.[1] || '{}'})`),
+    };
   },
 
   /**

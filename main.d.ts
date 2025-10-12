@@ -499,7 +499,7 @@ declare module '@mathieuc/tradingview' {
 
     export function symbolSearch(symbol: string, broker: string, session: string, signature: string): Promise<{data: any}>;
 
-    export function GetDataByChartUrl(session: string, signature?: string, url: string): Promise<any>;
+    export function GetDataByChartUrl(session: string, signature?: string, url: string): Promise<{content: any, metaInfo: any}>;
 
     export function chartToBacktestResult(session: string, signature?: string, url: string, options?: any): Promise<any>;
 
@@ -2245,6 +2245,9 @@ declare module '@mathieuc/tradingview' {
     export function strategyToCsv(
         studyId: string,
         values: Record<string, string | number | boolean>,
+        pineVersion: string,
+        session: string,
+        signature: string,
     ): Promise<{ 
       csvData: string, 
       externalSources: any, // TODO:: fix this type
