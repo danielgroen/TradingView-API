@@ -24,7 +24,7 @@ const defaultHeaders = {
   // extra headers
   'Accept-Encoding': 'gzip, deflate, br, zstd',
   'Sec-GPC': '1',
-  'Sec-Fetch-Dest': 'empty',
+  //'Sec-Fetch-Dest': 'empty', // breaks requests
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-site',
   Priority: 'u=4',
