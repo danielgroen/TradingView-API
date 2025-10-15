@@ -3,21 +3,22 @@ const { createLayout } = require('../../main');
 if (!process.env.SESSION || !process.env.SIGNATURE) throw Error('Please set your sessionid and signature cookies');
 
 const layoutName = 'Dziwne Me Baby';
-const symbolId = 'XTVCUSDT';
-const symbol = 'BYBIT:BTCUSDT.P';
-const interval = '59';
-const studyId = 'sqU6MY'; // TODO:: checking: what is this
-const indicatorId = 'PUB;fd7b861860564a86920a1b616fe98f54';
+const currencyId = 'XTVCUSDT';
+const symbol = 'BYBIT:SOLUSDT.P';
+const interval = '2h';
+const indicatorId = 'PUB;ba5b73720a2246cfa19b240dbfce62e0';
+const pineVersion = '1.0';
 const indicatorValues = { in_18: 9.9 };
 
 (async () => {
   const layoutUrl = await createLayout(
     layoutName,
-    symbolId,
+    // currencyId,
+    undefined,
     symbol,
     interval,
-    studyId,
     indicatorId,
+    pineVersion,
     indicatorValues,
     process.env.SESSION,
     process.env.SIGNATURE,

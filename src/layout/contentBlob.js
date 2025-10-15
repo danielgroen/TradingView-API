@@ -1,5 +1,11 @@
-function createEmptyLayoutContentBlob(layoutName, currencyId, symbol, interval, studyId) {
+const test = require('./botifyDatatest.json');
+const studyId = 'st0';
+
+function createEmptyLayoutContentBlob(layoutName, currencyId, symbol, interval) {
+  await 
   const shortName = symbol.split(':')[1];
+  return test;
+  // The blob can be found when you load a page: Just open the console and type: window.initData.content
   return {
     name: layoutName,
     layout: 's',
@@ -911,8 +917,7 @@ function createStudyMetaInfoMap(rawIndicator) {
   };
 }
 
-function createStudyStrategy(studyId, rawIndicator) {
-  const indicatorScriptId = rawIndicator.metaInfo.id;
+function createStudyStrategy(rawIndicator) {
   return {
     type: 'StudyStrategy',
     id: studyId,
@@ -940,13 +945,13 @@ function createStudyStrategy(studyId, rawIndicator) {
     },
     zorder: -10000,
     ownFirstValue: null,
-    metaInfo: `${indicatorScriptId}[v.${rawIndicator.metaInfo.pine.version}]`,
+    metaInfo: `${rawIndicator.metaInfo.id}[v.${rawIndicator.metaInfo.pine.version}]`,
   };
 }
 
 module.exports = {
-  createLayoutContentBlob(layoutName, currencyId, symbol, interval, studyId, rawIndicator) {
-    const emptyBlob = createEmptyLayoutContentBlob(layoutName, currencyId, symbol, interval, studyId);
+  createLayoutContentBlob(layoutName, currencyId, symbol, interval, rawIndicator, pineVersion) {
+    const emptyBlob = createEmptyLayoutContentBlob(layoutName, currencyId, symbol, interval, pineVersion);
     if (!rawIndicator) return emptyBlob;
 
     const blob = { ...emptyBlob };

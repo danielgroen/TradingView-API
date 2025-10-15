@@ -625,6 +625,7 @@ module.exports = {
 
     return data;
   },
+
   async GetDataByChartUrl(session, signature = '', url) {
     if (!url.includes('https://www.tradingview.com/chart/')) {
       throw new Error(`Invalid chart URL, got: ${url}`);
@@ -1063,14 +1064,14 @@ module.exports = {
      * @param {string} currencyId currencyId
      * @param {string} symbol symbol
      * @param {string} interval interval
-     * @param {string} studyId studyId
      * @param {string} indicatorId indicatorId
+     * @param {string} pineVersion pineVersion
      * @param {Record<string, any>} indicatorValues indicatorValues
      * @param {string} session User 'sessionid' cookie
      * @param {string} [signature] User 'sessionid_sign' cookie
      * @returns {Promise<string>} Layout URL
      */
-  async replaceLayout(layout, currencyId, symbol, interval, studyId, indicatorId, indicatorValues, session, signature) {
+  async replaceLayout(layout, currencyId, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
     const formData = new FormData();
     formData.append('id', layout.id);
     formData.append('name', layout.name);
@@ -1092,7 +1093,7 @@ module.exports = {
     const rawIndicator = await module.exports.getRawIndicator(indicatorId, 'last', session, signature);
     Object.entries(indicatorValues).forEach(([key, value]) => rawIndicator.setInputValue(key, value));
 
-    const contentBlob = createLayoutContentBlob(layout.name, currencyId, symbol, interval, studyId, rawIndicator);
+    const contentBlob = createLayoutContentBlob(layout.name, currencyId, symbol, interval, rawIndicator, pineVersion);
     const gzipData = zlib.gzipSync(JSON.stringify(contentBlob));
     formData.append('content', new Blob([gzipData], { type: 'application/gzip' }), 'blob.gz');
 
@@ -1122,20 +1123,30 @@ module.exports = {
      * @param {string} currencyId currencyId
      * @param {string} symbol symbol
      * @param {string} interval interval
-     * @param {string} studyId studyId
      * @param {string} indicatorId indicatorId
+     * @param {string} pineVersion pineVersion
      * @param {Record<string, any>} indicatorValues indicatorValues
      * @param {string} session User 'sessionid' cookie
      * @param {string} [signature] User 'sessionid_sign' cookie
      * @returns {Promise<string>} Layout Short URL
      */
-  async createLayout(name, currencyId, symbol, interval, studyId, indicatorId, indicatorValues, session, signature) {
+  async createLayout(name, currencyId, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
     const layout = await module.exports.createBlankLayout(name, session, signature);
 
-    const layoutShortUrl = await module.exports.replaceLayout(layout, currencyId, symbol, interval, studyId, indicatorId, indicatorValues, session, signature);
+    const layoutShortUrl = await module.exports.replaceLayout(layout, currencyId, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature);
     return layoutShortUrl;
   },
 
+  /**
+     * Creates a new layout and populates it with the provided indicator setup
+     * @function updateLayoutStudyInputs
+     * @param {string} chartShortUrl url
+     * @param {string} studySourceId indicatorId
+     * @param {string} inputs inputs
+     * @param {string} session User 'sessionid' cookie
+     * @param {string} [signature] User 'sessionid_sign' cookie
+     * @returns {Promise<string>} Layout Short URL
+     */
   async updateLayoutStudyInputs(chartShortUrl, studySourceId, inputs, session, signature) {
     const initData = await module.exports.fetchLayoutInitData(chartShortUrl, session, signature);
     if (!initData) throw new Error(`Failed to retrieve initData for layout: '${chartShortUrl}'`);
