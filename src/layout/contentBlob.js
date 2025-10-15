@@ -56,15 +56,17 @@ function createStudyStrategy(rawIndicator, id, type = 'StudyStrategy', parentSou
       showLabelsOnPriceScale: true,
       precision: 'default',
       parentSources: [],
-      ...(type === 'StudyStrategy' && {
-        parentSources: {},
-        strategy: { orders: { showLabels: true, showQty: true, visible: true } },
-      }),
+      // parentSources: {},
+      strategy: { orders: { showLabels: true, showQty: true, visible: true } },
+      // ...(type === 'StudyStrategy' && {
+      // }),
     },
-    ...(type === 'StudyStrategy' && {
-      ownerSource,
-      parentSources,
-    }),
+    // ...(type === 'StudyStrategy' && {
+    //   ownerSource,
+    //   parentSources,
+    // }),
+    ownerSource: '',
+    parentSources,
     zorder: -10000,
     ownFirstValue: null,
     metaInfo: `${rawIndicator.metaInfo.id}[v.${rawIndicator.metaInfo.pine.version}]`,
