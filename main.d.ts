@@ -369,13 +369,6 @@ declare module '@mathieuc/tradingview' {
         session?: string,
         signature?: string,
     ): Promise<RawPineIndicator>;
-
-    export function getPersonalIndicator(
-        id: string,
-        session: string,
-        signature?: string,
-    ): Promise<PineIndicator>;
-
     export interface TwoFactorInfoMessage {
         detail: string;
         code: string;
@@ -500,6 +493,15 @@ declare module '@mathieuc/tradingview' {
         twoFaType?: 'sms' | 'totp',
         UA?: string,
     ): Promise<LoginResponse>;
+
+    export type proPlan = 'pro_premium' | 'pro_plus' | 'pro_essential' | 'pro_ultimate'
+    export function isPro(session: string, signature: string): Promise<{details: string; code: string} | {pro_plan: proPlan}>;
+
+    export function symbolSearch(symbol: string, broker: string, session: string, signature: string): Promise<{data: any}>;
+
+    export function GetDataByChartUrl(session: string, signature?: string, url: string): Promise<{content: any, metaInfo: any}>;
+
+    export function chartToBacktestResult(session: string, signature?: string, url: string, options?: any): Promise<any>;
 
     /**
      * Get user
@@ -1644,7 +1646,7 @@ declare module '@mathieuc/tradingview' {
 
     export class ChartStudy {
         /** Study instance ID */
-        readonly id: string;
+        readonly studID: string;
         /** Indicator instance */
         instance: PineIndicator | BuiltInIndicator;
         /** Period values */
@@ -1655,6 +1657,9 @@ declare module '@mathieuc/tradingview' {
         readonly strategyReport: StrategyReport;
         /** Study callbacks */
         readonly callbacks: StudyCallbacks;
+
+        readonly getAsIndicatorDep: ChartStudy['getAsIndicatorDep'][];
+
 
         /**
          * Creates a new Study instance
@@ -2016,6 +2021,7 @@ declare module '@mathieuc/tradingview' {
                 currency?: 'EUR' | 'USD' | string;
                 resolution?: string;
             },
+            indicatorDeps?: typeof ChartStudy[],
         ): void;
 
         onHistoryLoaded(cb: () => void): void;
@@ -2239,6 +2245,9 @@ declare module '@mathieuc/tradingview' {
     export function strategyToCsv(
         studyId: string,
         values: Record<string, string | number | boolean>,
+        pineVersion: string,
+        session: string,
+        signature: string,
     ): Promise<{ 
       csvData: string, 
       externalSources: any, // TODO:: fix this type
@@ -2254,7 +2263,7 @@ declare module '@mathieuc/tradingview' {
       trades: any[],
       equity: number[],
       profit: number
-    ): {pnl90: number, pnl30: number, pnl7: number};
+    ): {pnl7: number, pnl30: number, pnl90: number, pnl180: number, pnl270: number, pnl365: number};
 
     export function calculateCGR(startValue: number, endValue: number, periods: number): number
     
