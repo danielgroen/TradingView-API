@@ -2067,11 +2067,10 @@ declare module '@mathieuc/tradingview' {
 
     export function replaceLayout(
         layout: Layout,
-        currencyId: string,
         symbol: string,
         interval: string,
-        studyId: string,
         indicatorId: string,
+        pineVersion: string,
         indicatorValues: Record<string, any>,
         session: string,
         signature: string
@@ -2079,11 +2078,10 @@ declare module '@mathieuc/tradingview' {
 
     export function createLayout(
         name: string,
-        currencyId: string,
         symbol: string,
         interval: string,
-        studyId: string,
         indicatorId: string,
+        pineVersion: string,
         indicatorValues: Record<string, any>,
         session: string,
         signature: string
