@@ -2,9 +2,10 @@ const UserAgent = require('user-agents');
 const { createHTTP2Adapter } = require('axios-http2-adapter');
 const axios = require('axios');
 const zlib = require('zlib');
+const { Blob } = require('node:buffer');
 const PineIndicator = require('./classes/PineIndicator');
 const { genAuthCookies, toTitleCase } = require('./utils');
-const { createLayoutContentBlob, getMainSeriesSourceFromLayoutContent } = require('./layout/contentBlob');
+const ContentBlob = require('./layout/contentBlob');
 
 axios.defaults.adapter = createHTTP2Adapter();
 const validateStatus = (status) => status < 500;
@@ -1061,7 +1062,6 @@ module.exports = {
      * Replaces an existing layout
      * @function replaceLayout
      * @param {Layout} layout Layout
-     * @param {string} currencyId currencyId
      * @param {string} symbol symbol
      * @param {string} interval interval
      * @param {string} indicatorId indicatorId
@@ -1071,8 +1071,10 @@ module.exports = {
      * @param {string} [signature] User 'sessionid_sign' cookie
      * @returns {Promise<string>} Layout URL
      */
-  async replaceLayout(layout, currencyId, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
-    const formData = new FormData();
+  async replaceLayout(layout, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
+    const [broker, coin] = symbol.split(':');
+    const formData = new globalThis.FormData();
+
     formData.append('id', layout.id);
     formData.append('name', layout.name);
     formData.append('description', layout.name);
@@ -1080,20 +1082,14 @@ module.exports = {
     formData.append('symbol', symbol);
     formData.append('legs', JSON.stringify([{ symbol, pro_symbol: symbol }]));
     formData.append('charts_symbols', JSON.stringify({ 1: { symbol } }));
-    formData.append('resolution', interval);
-
-    const [broker, coin] = symbol.split(':');
+    formData.append('resolution', interval.toUpperCase());
     formData.append('exchange', toTitleCase(broker));
     formData.append('listed_exchange', broker);
     formData.append('short_name', coin);
-
     formData.append('is_realtime', '1');
-    // formData.append('savingToken', '0.7257906314572806');  //TODO is this needed?
 
-    const rawIndicator = await module.exports.getRawIndicator(indicatorId, 'last', session, signature);
-    Object.entries(indicatorValues).forEach(([key, value]) => rawIndicator.setInputValue(key, value));
-
-    const contentBlob = createLayoutContentBlob(layout.name, currencyId, symbol, interval, rawIndicator, pineVersion);
+    const rawBlob = new ContentBlob(layout.name, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature);
+    const contentBlob = await rawBlob.createLayoutContentBlob();
     const gzipData = zlib.gzipSync(JSON.stringify(contentBlob));
     formData.append('content', new Blob([gzipData], { type: 'application/gzip' }), 'blob.gz');
 
@@ -1130,10 +1126,10 @@ module.exports = {
      * @param {string} [signature] User 'sessionid_sign' cookie
      * @returns {Promise<string>} Layout Short URL
      */
-  async createLayout(name, currencyId, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
+  async createLayout(name, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
     const layout = await module.exports.createBlankLayout(name, session, signature);
 
-    const layoutShortUrl = await module.exports.replaceLayout(layout, currencyId, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature);
+    const layoutShortUrl = await module.exports.replaceLayout(layout, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature);
     return layoutShortUrl;
   },
 
@@ -1151,7 +1147,7 @@ module.exports = {
     const initData = await module.exports.fetchLayoutInitData(chartShortUrl, session, signature);
     if (!initData) throw new Error(`Failed to retrieve initData for layout: '${chartShortUrl}'`);
 
-    const mainSeriesSource = getMainSeriesSourceFromLayoutContent(initData.content);
+    const mainSeriesSource = ContentBlob.getMainSeriesSourceFromLayoutContent(initData.content);
     if (!mainSeriesSource) throw new Error('Failed to retrieve MainSeriesSource.');
 
     const formData = new FormData();
