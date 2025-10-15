@@ -22,14 +22,14 @@ const defaultHeaders = {
   Connection: 'keep-alive',
 
   // extra headers
-  // 'Accept-Encoding': 'gzip, deflate, br, zstd',
-  // 'Sec-GPC': '1',
-  // 'Sec-Fetch-Dest': 'empty',
-  // 'Sec-Fetch-Mode': 'cors',
-  // 'Sec-Fetch-Site': 'same-site',
-  // Priority: 'u=4',
-  // Pragma: 'no-cache',
-  // 'Cache-Control': 'no-cache',
+  'Accept-Encoding': 'gzip, deflate, br, zstd',
+  'Sec-GPC': '1',
+  // 'Sec-Fetch-Dest': 'empty', // breaks requests
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'same-site',
+  Priority: 'u=4',
+  Pragma: 'no-cache',
+  'Cache-Control': 'no-cache',
 };
 
 async function fetchScanData(tickers = [], columns = []) {
