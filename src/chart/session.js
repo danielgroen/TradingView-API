@@ -256,12 +256,7 @@ module.exports = (client) => class ChartSession {
 
         if (packet.type === 'critical_error') {
           const [, name, description] = packet.data;
-          this.#handleError({
-            type: `[Session]: ${packet.type}`,
-            name,
-            description: String(description).split(',')[0],
-            timestamp: new Date(),
-          });
+          this.#handleError('Critical error:', name, description);
         }
       },
     };

@@ -2,10 +2,9 @@ const UserAgent = require('user-agents');
 const { createHTTP2Adapter } = require('axios-http2-adapter');
 const axios = require('axios');
 const zlib = require('zlib');
-const { Blob } = require('node:buffer');
 const PineIndicator = require('./classes/PineIndicator');
 const { genAuthCookies, toTitleCase } = require('./utils');
-const ContentBlob = require('./layout/contentBlob');
+const { createLayoutContentBlob, getMainSeriesSourceFromLayoutContent } = require('./layout/contentBlob');
 
 axios.defaults.adapter = createHTTP2Adapter();
 const validateStatus = (status) => status < 500;
@@ -25,7 +24,7 @@ const defaultHeaders = {
   // extra headers
   'Accept-Encoding': 'gzip, deflate, br, zstd',
   'Sec-GPC': '1',
-  // 'Sec-Fetch-Dest': 'empty', // breaks requests
+  //'Sec-Fetch-Dest': 'empty', // breaks requests
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-site',
   Priority: 'u=4',
@@ -286,28 +285,6 @@ module.exports = {
     }
   },
 
-  async symbolSearch(symbol, broker, session = '', signature = '') {
-    const url = 'https://symbol-search.tradingview.com/symbol_search/v3/';
-    const { data } = await axios.get(url, {
-      params: {
-        text: symbol.toUpperCase(),
-        hl: 1,
-        exchange: broker.toUpperCase(),
-        lang: 'en',
-        search_type: 'undefined',
-        domain: 'production',
-        sort_by_country: 'US',
-        promo: true,
-      },
-      headers: {
-        ...defaultHeaders,
-        cookie: genAuthCookies(session, signature),
-      },
-      validateStatus,
-    });
-    return data;
-  },
-
   /**
      * Get an indicator
      * @function getIndicator
@@ -318,7 +295,8 @@ module.exports = {
      * @returns {Promise<PineIndicator>} Indicator
      */
   async getIndicator(id, version = 'last', session = '', signature = '') {
-    // const [isPublic, isPersonal, isStudy] = [id.startsWith('PUB;'), id.startsWith('USER;'), id.startsWith('STD;')];
+    // const indicID = id.replace(/ |%/g, '%25'); // old variant
+
     const { data } = await axios.get(`https://pine-facade.tradingview.com/pine-facade/translate/${encodeURIComponent(id)}/${version}`, {
       headers: {
         ...defaultHeaders,
@@ -327,9 +305,8 @@ module.exports = {
       validateStatus,
     });
 
-    if (data === 'The user requesting information on the script is not allowed to do so') throw new Error('User does not have access to this script.');
     if (!data.success || !data.result.metaInfo || !data.result.metaInfo.inputs) {
-      throw new Error(`Non-existent or unsupported indicator: '${id}' '${data.reason}'`);
+      throw new Error(`Inexistent or unsupported indicator: "${data.reason}"`);
     }
 
     const inputs = {};
@@ -357,7 +334,8 @@ module.exports = {
     const plots = {};
 
     Object.keys(data.result.metaInfo.styles).forEach((plotId) => {
-      const plotTitle = data.result.metaInfo.styles[plotId].title
+      const plotTitle = data.result.metaInfo.styles[plotId]
+        .title
         .replace(/ /g, '_')
         .replace(/[^a-zA-Z0-9_]/g, '');
 
@@ -614,42 +592,6 @@ module.exports = {
     };
   },
 
-  async isPro(session, signature = '') {
-    const { data } = await axios.get('https://www.tradingview.com/pro-plans/profile/', {
-      headers: {
-        ...defaultHeaders,
-        cookie: genAuthCookies(session, signature),
-      },
-      maxRedirects: 0,
-      validateStatus,
-    });
-
-    return data;
-  },
-
-  async GetDataByChartUrl(session, signature = '', url) {
-    if (!url.includes('https://www.tradingview.com/chart/')) {
-      throw new Error(`Invalid chart URL, got: ${url}`);
-    }
-    const { data: html } = await axios.get(url, {
-      headers: {
-        ...defaultHeaders,
-        cookie: genAuthCookies(session, signature),
-      },
-      maxRedirects: 0,
-      validateStatus,
-    });
-
-    if (!html.includes('auth_token')) {
-      throw new Error('Wrong or expired sessionid/signature');
-    }
-
-    return {
-      content: JSON.parse(/initData\.content\s*=\s*(\{.*?\});/s.exec(html)?.[1] || '{}'),
-      metaInfo: eval(`(${html.match(/initData\.metaInfo\s*=\s*({[\s\S]*?});/)?.[1] || '{}'})`),
-    };
-  },
-
   /**
      * Get user from 'sessionid' cookie
      * @function getUser
@@ -658,7 +600,6 @@ module.exports = {
      * @param {string} [location] Auth page location (For france: https://fr.tradingview.com/)
      * @returns {Promise<User>} Token
      */
-
   async getUser(session, signature = '', location = 'https://www.tradingview.com/') {
     const { data, headers } = await axios.get(location, {
       headers: {
@@ -1062,19 +1003,18 @@ module.exports = {
      * Replaces an existing layout
      * @function replaceLayout
      * @param {Layout} layout Layout
+     * @param {string} currencyId currencyId
      * @param {string} symbol symbol
      * @param {string} interval interval
+     * @param {string} studyId studyId
      * @param {string} indicatorId indicatorId
-     * @param {string} pineVersion pineVersion
      * @param {Record<string, any>} indicatorValues indicatorValues
      * @param {string} session User 'sessionid' cookie
      * @param {string} [signature] User 'sessionid_sign' cookie
      * @returns {Promise<string>} Layout URL
      */
-  async replaceLayout(layout, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
-    const [broker, coin] = symbol.split(':');
-    const formData = new globalThis.FormData();
-
+  async replaceLayout(layout, currencyId, symbol, interval, studyId, indicatorId, indicatorValues, session, signature) {
+    const formData = new FormData();
     formData.append('id', layout.id);
     formData.append('name', layout.name);
     formData.append('description', layout.name);
@@ -1082,14 +1022,20 @@ module.exports = {
     formData.append('symbol', symbol);
     formData.append('legs', JSON.stringify([{ symbol, pro_symbol: symbol }]));
     formData.append('charts_symbols', JSON.stringify({ 1: { symbol } }));
-    formData.append('resolution', interval.toUpperCase());
+    formData.append('resolution', interval);
+
+    const [broker, coin] = symbol.split(':');
     formData.append('exchange', toTitleCase(broker));
     formData.append('listed_exchange', broker);
     formData.append('short_name', coin);
-    formData.append('is_realtime', '1');
 
-    const rawBlob = new ContentBlob(layout.name, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature);
-    const contentBlob = await rawBlob.createLayoutContentBlob();
+    formData.append('is_realtime', '1');
+    // formData.append('savingToken', '0.7257906314572806');  //TODO is this needed?
+
+    const rawIndicator = await module.exports.getRawIndicator(indicatorId, 'last', session, signature);
+    Object.entries(indicatorValues).forEach(([key, value]) => rawIndicator.setInputValue(key, value));
+
+    const contentBlob = createLayoutContentBlob(layout.name, currencyId, symbol, interval, studyId, rawIndicator);
     const gzipData = zlib.gzipSync(JSON.stringify(contentBlob));
     formData.append('content', new Blob([gzipData], { type: 'application/gzip' }), 'blob.gz');
 
@@ -1119,35 +1065,25 @@ module.exports = {
      * @param {string} currencyId currencyId
      * @param {string} symbol symbol
      * @param {string} interval interval
+     * @param {string} studyId studyId
      * @param {string} indicatorId indicatorId
-     * @param {string} pineVersion pineVersion
      * @param {Record<string, any>} indicatorValues indicatorValues
      * @param {string} session User 'sessionid' cookie
      * @param {string} [signature] User 'sessionid_sign' cookie
      * @returns {Promise<string>} Layout Short URL
      */
-  async createLayout(name, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature) {
+  async createLayout(name, currencyId, symbol, interval, studyId, indicatorId, indicatorValues, session, signature) {
     const layout = await module.exports.createBlankLayout(name, session, signature);
 
-    const layoutShortUrl = await module.exports.replaceLayout(layout, symbol, interval, indicatorId, pineVersion, indicatorValues, session, signature);
+    const layoutShortUrl = await module.exports.replaceLayout(layout, currencyId, symbol, interval, studyId, indicatorId, indicatorValues, session, signature);
     return layoutShortUrl;
   },
 
-  /**
-     * Creates a new layout and populates it with the provided indicator setup
-     * @function updateLayoutStudyInputs
-     * @param {string} chartShortUrl url
-     * @param {string} studySourceId indicatorId
-     * @param {string} inputs inputs
-     * @param {string} session User 'sessionid' cookie
-     * @param {string} [signature] User 'sessionid_sign' cookie
-     * @returns {Promise<string>} Layout Short URL
-     */
   async updateLayoutStudyInputs(chartShortUrl, studySourceId, inputs, session, signature) {
     const initData = await module.exports.fetchLayoutInitData(chartShortUrl, session, signature);
     if (!initData) throw new Error(`Failed to retrieve initData for layout: '${chartShortUrl}'`);
 
-    const mainSeriesSource = ContentBlob.getMainSeriesSourceFromLayoutContent(initData.content);
+    const mainSeriesSource = getMainSeriesSourceFromLayoutContent(initData.content);
     if (!mainSeriesSource) throw new Error('Failed to retrieve MainSeriesSource.');
 
     const formData = new FormData();

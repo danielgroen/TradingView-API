@@ -75,22 +75,9 @@ module.exports = class Client {
     this.#callbacks.event.forEach((e) => e(ev, ...data));
   }
 
-  #handleError(name, description, ...rest) {
-    const error = {
-      name: name instanceof Error ? name.name : String(name),
-      description: description instanceof Error ? description.message : String(description),
-      details: rest, // keep any extra stuff if it exists
-      timestamp: new Date(),
-    };
-
-    if (this.#callbacks.error.length === 0) {
-      console.error(
-        `[ClientError @${error.timestamp.toISOString()}] ${error.name}: ${error.description}`,
-        ...rest,
-      );
-    } else {
-      this.#handleEvent('error', error);
-    }
+  #handleError(...msgs) {
+    if (this.#callbacks.error.length === 0) console.error(...msgs);
+    else this.#handleEvent('error', ...msgs);
   }
 
   /**

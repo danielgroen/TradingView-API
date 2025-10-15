@@ -1,11 +1,10 @@
-const { getIndicator } = require('../miscRequests');
-const BuiltInIndicator = require('../classes/BuiltInIndicator');
+const { BuiltInIndicator, getIndicator } = require('../miscRequests');
 const Client = require('../client');
 
 const serverOptions = ['prodata', 'history-data'];
 const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOptions[0]) => new Promise(async (resolve, reject) => {
   // eslint-disable-next-line camelcase
-  const { pine_id, pine_version, inputs } = alert.condition.series[0];
+  const { pine_id, inputs } = alert.condition.series[0];
   const symbol = alert.symbol.match(/"symbol":"([^"]+)"/)[1];
 
   const client = new Client({
@@ -27,7 +26,7 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOpt
     return reject(Error('[TRADINGVIEW]: chart error'));
   });
 
-  const indicator = await getIndicator(pine_id, pine_version ?? 'last', sessionId, sessionSign);
+  const indicator = await getIndicator(pine_id, 'last', sessionId, sessionSign);
 
   const extIndicators = {};
 
@@ -55,11 +54,12 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOpt
           }
         }
 
+        const study = new chart.Study(externalIndicator);
         if (isTvGeneralIndicator) {
-          for (const k in value.inputs) {
-            const i = externalIndicator.inputs?.[k];
+          for (const ke in value.inputs) {
+            const i = externalIndicator.inputs?.[ke];
             if (i == null) continue;
-            i.value = value.inputs[k];
+            i.value = value.inputs[ke];
           }
         }
 
@@ -71,7 +71,6 @@ const alertToBacktest = async (alert, sessionId, sessionSign, server = serverOpt
           }
         }
 
-        const study = new chart.Study(externalIndicator);
         extIndicators[value.pine_id] = study;
       }
 

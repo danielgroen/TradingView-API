@@ -12,42 +12,25 @@ const calculateLinReg = (data) => {
 };
 
 const getPnlByDaysAgo = (trades, equity, profit) => {
+  let { pnlAtDay90, pnlAtDay30, pnlAtDay7 } = { pnlAtDay90: 0, pnlAtDay30: 0, pnlAtDay7: 0 };
+
   const daysInMilliseconds = (days) => Date.now() - days * 24 * 60 * 60 * 1000;
+  const target90Ms = daysInMilliseconds(90);
+  const target30Ms = daysInMilliseconds(30);
+  const target7Ms = daysInMilliseconds(7);
 
-  const targets = {
-    7: daysInMilliseconds(7),
-    30: daysInMilliseconds(30),
-    90: daysInMilliseconds(90),
-    180: daysInMilliseconds(180),
-    270: daysInMilliseconds(270),
-    365: daysInMilliseconds(365),
-  };
+  const recentTrades90 = trades.filter(({ entry }) => entry.time > target90Ms);
+  const recentTrades30 = recentTrades90.filter(({ entry }) => entry.time > target30Ms);
+  const recentTrades7 = recentTrades30.filter(({ entry }) => entry.time > target7Ms);
 
-  const recentTrades = {};
-  const pnlAt = {};
-
-  // Start from the oldest
-  recentTrades[365] = trades.filter(({ entry }) => entry.time > targets[365]);
-  recentTrades[270] = trades.filter(({ entry }) => entry.time > targets[270]);
-  recentTrades[180] = trades.filter(({ entry }) => entry.time > targets[180]);
-  recentTrades[90] = trades.filter(({ entry }) => entry.time > targets[90]);
-  recentTrades[30] = trades.filter(({ entry }) => entry.time > targets[30]);
-  recentTrades[7] = trades.filter(({ entry }) => entry.time > targets[7]);
-
-  for (const days of [7, 30, 90, 180, 270, 365]) {
-    const list = recentTrades[days];
-    pnlAt[days] = list.length ? equity[trades.length - list.length] - 100 : 0;
-  }
-
-  const compute = (days) => (pnlAt[days] ? ((profit - pnlAt[days]) / Math.abs(pnlAt[days])) * 100 : 0);
+  if (recentTrades90.length) pnlAtDay90 = equity[trades.length - recentTrades90.length] - 100;
+  if (recentTrades30.length) pnlAtDay30 = equity[trades.length - recentTrades30.length] - 100;
+  if (recentTrades7.length) pnlAtDay7 = equity[trades.length - recentTrades7.length] - 100;
 
   return {
-    pnl7: compute(7),
-    pnl30: compute(30),
-    pnl90: compute(90),
-    pnl180: compute(180),
-    pnl270: compute(270),
-    pnl365: compute(365),
+    pnl90: pnlAtDay90 ? ((profit - pnlAtDay90) / Math.abs(pnlAtDay90)) * 100 : 0,
+    pnl30: pnlAtDay30 ? ((profit - pnlAtDay30) / Math.abs(pnlAtDay30)) * 100 : 0,
+    pnl7: pnlAtDay7 ? ((profit - pnlAtDay7) / Math.abs(pnlAtDay7)) * 100 : 0,
   };
 };
 

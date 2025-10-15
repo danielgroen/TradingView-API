@@ -74,8 +74,8 @@ async function populateJsonWithValues(json, data) {
   return [newJson, externalSources];
 }
 
-async function strategyToCsv(studyId, values, pineVersion = 'last', session, signature) {
-  const indicator = await TradingView.getIndicator(studyId, pineVersion, session, signature);
+async function strategyToCsv(studyId, values) {
+  const indicator = await TradingView.getIndicator(studyId);
   const [inputsWithNewValues, externalSources] = await populateJsonWithValues(
     indicator.inputs,
     values,
