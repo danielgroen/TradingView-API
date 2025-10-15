@@ -33,7 +33,7 @@ function createStudyMetaInfoMap(rawIndicator) {
   };
 }
 
-function createStudyStrategy(rawIndicator, id, type = 'StudyStrategy', parentSources, ownerSource) {
+function createStudyStrategy(rawIndicator, id, type = 'StudyStrategy', parentSources) {
   return {
     type,
     id,
@@ -56,15 +56,8 @@ function createStudyStrategy(rawIndicator, id, type = 'StudyStrategy', parentSou
       showLabelsOnPriceScale: true,
       precision: 'default',
       parentSources: [],
-      // parentSources: {},
       strategy: { orders: { showLabels: true, showQty: true, visible: true } },
-      // ...(type === 'StudyStrategy' && {
-      // }),
     },
-    // ...(type === 'StudyStrategy' && {
-    //   ownerSource,
-    //   parentSources,
-    // }),
     ownerSource: '',
     parentSources,
     zorder: -10000,
@@ -108,32 +101,31 @@ module.exports = class ContentBlob {
     // eslint-disable-next-line global-require
     const { getRawIndicator } = require('../miscRequests');
     let [sources, studyMetaInfoMap] = [[...blob.charts[0].panes[0].sources], { ...blob.studyMetaInfoMap }];
-    const studId = 'vObAdA';
+    const extIds = [];
 
     // for (const [i, value] of Object.values(this.#indicatorValues).entries()) {
     for (const [i, [key, value]] of Object.entries(this.#indicatorValues).entries()) {
       // Ext deps
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        // const studId = `st${i}`; // temp removed
+        const studId = `st${i}`;
+        extIds.push(studId);
 
         const rawIndicator = await getRawIndicator(value.pine_id, value.pine_version, this.#session, this.#signature);
         Object.entries(value.inputs).forEach(([k, v]) => rawIndicator.setInputValue(k, v));
         studyMetaInfoMap = { ...studyMetaInfoMap, ...createStudyMetaInfoMap(rawIndicator) };
         await sources.push(createStudyStrategy(rawIndicator, studId, 'Study'));
         this.#indicatorValues[key] = `${studId}$${value.plot_id.split('_')[1]}`;
-        console.log('ovverriding', i);
       }
     }
 
     // Main strategy
     const rawIndicator = await getRawIndicator(this.#indicatorId, this.#pineVersion, this.#session, this.#signature);
     Object.entries(this.#indicatorValues).forEach(([key, value]) => {
-      if (rawIndicator.inputs.find((i) => i.id === key).type === 'color') return true; // skip colors, causing errors
+      if (rawIndicator.inputs.find((i) => i.id === key).type === 'color') return true; // skip colors; causing errors
       return rawIndicator.setInputValue(key, value);
     });
     studyMetaInfoMap = { ...studyMetaInfoMap, ...createStudyMetaInfoMap(rawIndicator) };
-    // sources.push(strat1);
-    sources.push(createStudyStrategy(rawIndicator, 'VwaCEx', 'StudyStrategy', [studId, studId, studId], studId));
+    sources.push(createStudyStrategy(rawIndicator, 'mainStratId', 'StudyStrategy', extIds));
 
     return { sources, studyMetaInfoMap };
   }
